@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHAIN/LOG — Distributed Ledger Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Space Mono', 'monospace'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        void: '#000000',
+                        signal: '#00ff41',
+                        alert: '#ff003c',
+                        frost: '#e0e0e0',
+                        dim: '#1a1a1a',
+                        trace: '#333333',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* TACTILE BRUTALISM CORE */
+        body {
+            background-color: #000000;
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* 1px solid borders everywhere - no blur, no shadow */
+        .brutal-border {
+            border: 1px solid #333333;
+        }
+        
+        .brutal-border-signal {
+            border: 1px solid #00ff41;
+        }
+        
+        .brutal-border-alert {
+            border: 1px solid #ff003c;
+        }
+
+        /* Sharp 0px corners */
+        .brutal-box {
+            border-radius: 0px;
+            background: #000000;
+            position: relative;
+        }
+
+        /* Kinetic typography */
+        .kinetic {
+            animation: glitch 8s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); }
+            94% { transform: translate(2px, -1px); }
+            96% { transform: translate(-1px, 2px); }
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 65, 0.1);
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border: 1px solid #00ff41;
+        }
+
+        /* Grid overlay */
+        .grid-overlay {
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Terminal cursor blink */
+        .cursor-blink::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+            color: #00ff41;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Hover states - raw and immediate */
+        .hover-trace:hover {
+            background: #00ff41;
+            color: #000000;
+            transition: none;
+        }
+
+        .hover-alert:hover {
+            background: #ff003c;
+            color: #000000;
+            transition: none;
+        }
+
+        /* Data stream animation */
+        .data-stream {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            line-height: 1.4;
+            color: rgba(0, 255, 65, 0.3);
+            overflow: hidden;
+            white-space: pre;
+        }
+
+        /* Block visualization */
+        .hash-block {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: -0.5px;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        /* Noise texture overlay */
+        .noise {
+            position: fixed;
+            inset: 0;
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 2;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Section divider */
+        .section-divider {
+            height: 1px;
+            background: #333;
+            width: 100%;
+            position: relative;
+        }
+        
+        .section-divider::before {
+            content: '◆';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            color: #00ff41;
+            padding: 0 10px;
+            font-size: 10px;
+        }
+
+        /* Tab system */
+        .tab-active {
+            background: #00ff41;
+            color: #000;
+            border: 1px solid #00ff41;
+        }
+        
+        .tab-inactive {
+            background: #000;
+            color: #666;
+            border: 1px solid #333;
+        }
+
+        /* Progress bar */
+        .progress-fill {
+            background: repeating-linear-gradient(
+                90deg,
+                #00ff41,
+                #00ff41 2px,
+                #000 2px,
+                #000 4px
+            );
+        }
+
+        /* Typewriter effect */
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid #00ff41;
+            white-space: nowrap;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #00ff41 }
+        }
+
+        /* Marquee */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+        }
+        
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: #000;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: 'Space Mono', monospace;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+        
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-signal selection:text-void">
+
+    <!-- FX Layers -->
+    <div class="grid-overlay"></div>
+    <div class="noise"></div>
+    <div class="scanline"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void border-b border-trace brutal-box">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-signal animate-pulse"></div>
+                <span class="font-mono text-sm tracking-widest uppercase font-bold text-frost">CHAIN/LOG</span>
+                <span class="hidden sm:inline text-[10px] font-mono text-trace border-l border-trace pl-3">v.2026.1.0</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-0">
+                <a href="#protocol" class="px-4 py-5 text-[11px] font-mono uppercase tracking-wider text-trace hover-trace border-r border-trace">Protocol</a>
+                <a href="#ledger" class="px-4 py-5 text-[11px] font-mono uppercase tracking-wider text-trace hover-trace border-r border-trace">Ledger</a>
+                <a href="#network" class="px-4 py-5 text-[11px] font-mono uppercase tracking-wider text-trace hover-trace border-r border-trace">Network</a>
+                <a href="#telemetry" class="px-4 py-5 text-[11px] font-mono uppercase tracking-wider text-trace hover-trace">Telemetry</a>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 text-[10px] font-mono text-trace">
+                    <span class="w-2 h-2 rounded-full bg-signal"></span>
+                    LIVE
+                </div>
+                <button onclick="toggleMenu()" class="md:hidden w-8 h-8 border border-trace flex items-center justify-center hover-trace">
+                    <span class="font-mono text-xs">≡</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden border-t border-trace bg-void">
+            <a href="#protocol" class="block px-4 py-3 text-xs font-mono uppercase text-trace hover-trace border-b border-trace">Protocol</a>
+            <a href="#ledger" class="block px-4 py-3 text-xs font-mono uppercase text-trace hover-trace border-b border-trace">Ledger</a>
+            <a href="#network" class="block px-4 py-3 text-xs font-mono uppercase text-trace hover-trace border-b border-trace">Network</a>
+            <a href="#telemetry" class="block px-4 py-3 text-xs font-mono uppercase text-trace hover-trace">Telemetry</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex flex-col justify-center pt-14 border-b border-trace">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 w-full">
+            
+            <!-- Status Bar -->
+            <div class="flex flex-wrap gap-4 mb-12 text-[10px] font-mono text-trace uppercase tracking-wider">
+                <span class="border border-trace px-2 py-1">Status: OPERATIONAL</span>
+                <span class="border border-trace px-2 py-1">Nodes: 14,892</span>
+                <span class="border border-trace px-2 py-1">Block Height: 18,402,991</span>
+                <span class="border border-trace px-2 py-1">Latency: 12ms</span>
+            </div>
+
+            <div class="grid lg:grid-cols-12 gap-8 items-end">
+                <div class="lg:col-span-8">
+                    <h1 class="font-mono text-5xl sm:text-7xl lg:text-8xl font-bold leading-[0.9] tracking-tighter mb-6 kinetic">
+                        <span class="text-frost">DISTRIBUTED</span><br>
+                        <span class="text-signal">TRUST</span><br>
+                        <span class="text-trace">MACHINES</span>
+                    </h1>
+                    
+                    <div class="max-w-xl">
+                        <p class="text-sm text-trace leading-relaxed mb-6 font-mono border-l-2 border-signal pl-4">
+                            Blockchain is not a database. It is a mechanism for establishing consensus without intermediaries. 
+                            In 2026, this mechanism processes $4T+ in stablecoin volume and secures $33B in tokenized assets across 137 sovereign networks.
+                        </p>
+                        
+                        <div class="flex gap-0">
+                            <a href="#ledger" class="px-6 py-3 bg-signal text-void font-mono text-xs font-bold uppercase tracking-wider hover:bg-frost transition-none border border-signal">
+                                Inspect Ledger →
+                            </a>
+                            <a href="#protocol" class="px-6 py-3 bg-void text-trace font-mono text-xs font-bold uppercase tracking-wider hover-trace border border-trace border-l-0">
+                                [ Protocol Specs ]
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 hidden lg:block">
+                    <div class="border border-trace p-4 font-mono text-[10px] text-trace leading-relaxed h-64 overflow-hidden relative">
+                        <div class="absolute top-2 right-2 text-signal">◈ LIVE FEED</div>
+                        <div id="terminal-feed" class="mt-6 space-y-1">
+                            <!-- JS populates this -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marquee -->
+            <div class="mt-16 border-t border-trace py-3 marquee-container font-mono text-xs text-trace uppercase tracking-widest">
+                <div class="marquee-content">
+                    HASH: 0000000000000000000b3d8a7c4e8f9a2b1c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
+                    HASH: 0000000000000000000b3d8a7c4e8f9a2b1c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Protocol Section -->
+    <section id="protocol" class="py-24 border-b border-trace relative">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6">
+            <div class="flex items-center gap-4 mb-16">
+                <span class="font-mono text-signal text-sm">01</span>
+                <div class="h-px flex-1 bg-trace"></div>
+                <h2 class="font-mono text-2xl sm:text-4xl font-bold text-frost uppercase tracking-tighter">Protocol Architecture</h2>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-0 border border-trace">
+                <!-- Left: Specs -->
+                <div class="p-8 border-r border-trace">
+                    <h3 class="font-mono text-sm text-signal uppercase tracking-widest mb-8 border-b border-trace pb-4">
+                        Core Parameters
+                    </h3>
+                    
+                    <div class="space-y-6 font-mono text-xs">
+                        <div class="grid grid-cols-3 gap-4 border-b border-dim pb-4">
+                            <span class="text-trace">CONSENSUS</span>
+                            <span class="col-span-2 text-frost">Proof of Stake / Hybrid BFT</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-b border-dim pb-4">
+                            <span class="text-trace">THROUGHPUT</span>
+                            <span class="col-span-2 text-frost">50,000 TPS (L2) / 15 TPS (L1)</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-b border-dim pb-4">
+                            <span class="text-trace">FINALITY</span>
+                            <span class="col-span-2 text-frost">~12 seconds</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-b border-dim pb-4">
+                            <span class="text-trace">CRYPTOGRAPHY</span>
+                            <span class="col-span-2 text-frost">SHA-256 / ECDSA / zk-SNARKs</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-b border-dim pb-4">
+                            <span class="text-trace">VM</span>
+                            <span class="col-span-2 text-frost">EVM-Compatible / WASM</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <span class="text-trace">INTEROP</span>
+                            <span class="col-span-2 text-frost">IBC / CCIP / LayerZero</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 p-4 border border-trace bg-dim">
+                        <div class="font-mono text-[10px] text-trace uppercase mb-2">Active Threat Model</div>
+                        <div class="flex gap-2 flex-wrap">
+                            <span class="px-2 py-1 border border-alert text-alert text-[10px] font-mono">51% ATTACK</span>
+                            <span class="px-2 py-1 border border-alert text-alert text-[10px] font-mono">SYBIL</span>
+                            <span class="px-2 py-1 border border-alert text-alert text-[10px] font-mono">FINALITY</span>
+                            <span class="px-2 py-1 border border-signal text-signal text-[10px] font-mono">MITIGATED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Diagram -->
+                <div class="p-8 relative overflow-hidden">
+                    <h3 class="font-mono text-sm text-signal uppercase tracking-widest mb-8 border-b border-trace pb-4">
+                        Network Topology
+                    </h3>
+                    
+                    <div class="relative h-80 border border-trace bg-void" id="network-viz">
+                        <canvas id="nodeCanvas" class="absolute inset-0 w-full h-full"></canvas>
+                        <div class="absolute bottom-4 left-4 font-mono text-[10px] text-trace">
+                            <div>Nodes: <span class="text-signal" id="node-count">0</span></div>
+                            <div>Connections: <span class="text-signal" id="conn-count">0</span></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <div class="border border-trace p-3">
+                            <div class="text-[10px] font-mono text-trace uppercase mb-1">L1 Base Layer</div>
+                            <div class="text-xs font-mono text-frost">Settlement & Consensus</div>
+                        </div>
+                        <div class="border border-trace p-3">
+                            <div class="text-[10px] font-mono text-trace uppercase mb-1">L2 Execution</div>
+                            <div class="text-xs font-mono text-frost">Rollups & Channels</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ledger Section -->
+    <section id="ledger" class="py-24 border-b border-trace">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6">
+            <div class="flex items-center gap-4 mb-16">
+                <span class="font-mono text-signal text-sm">02</span>
+                <div class="h-px flex-1 bg-trace"></div>
+                <h2 class="font-mono text-2xl sm:text-4xl font-bold text-frost uppercase tracking-tighter">Immutable Ledger</h2>
+            </div>
+
+            <!-- Block Explorer -->
+            <div class="border border-trace mb-12">
+                <div class="border-b border-trace p-4 flex items-center justify-between bg-dim">
+                    <span class="font-mono text-xs text-signal uppercase tracking-widest">Block Explorer // Real-time</span>
+                    <div class="flex gap-2">
+                        <button onclick="mineBlock()" class="px-3 py-1 border border-signal text-signal text-[10px] font-mono uppercase hover:bg-signal hover:text-void transition-none">
+                            [ MINE BLOCK ]
+                        </button>
+                        <button onclick="tamperBlock()" class="px-3 py-1 border border-alert text-alert text-[10px] font-mono uppercase hover:bg-alert hover:text-void transition-none">
+                            [ ATTEMPT TAMPER ]
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4 overflow-x-auto">
+                    <div class="flex gap-4 min-w-max" id="blockchain-viz">
+                        <!-- Blocks generated by JS -->
+                    </div>
+                </div>
+                
+                <div class="border-t border-trace p-4 bg-dim">
+                    <div id="ledger-status" class="font-mono text-xs text-trace">
+                        STATUS: CHAIN VERIFIED // ALL HASHES VALID // MERKLE ROOT CONFIRMED
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hash Explanation -->
+            <div class="grid md:grid-cols-3 gap-0 border border-trace">
+                <div class="p-6 border-r border-trace">
+                    <div class="font-mono text-signal text-xs uppercase tracking-widest mb-4">01. Data</div>
+                    <p class="text-sm text-trace leading-relaxed">
+                        Each block contains a payload—transactions, smart contract state changes, or oracle data. This payload is serialized into a byte string.
+                    </p>
+                </div>
+                <div class="p-6 border-r border-trace">
+                    <div class="font-mono text-signal text-xs uppercase tracking-widest mb-4">02. Hash</div>
+                    <p class="text-sm text-trace leading-relaxed">
+                        SHA-256 digests the data into a 64-character hexadecimal fingerprint. Alter one bit, the entire hash changes unpredictably.
+                    </p>
+                </div>
+                <div class="p-6">
+                    <div class="font-mono text-signal text-xs uppercase tracking-widest mb-4">03. Link</div>
+                    <p class="text-sm text-trace leading-relaxed">
+                        Each block embeds the previous block's hash. To tamper with history, you must re-mine every subsequent block faster than the network.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Network Section -->
+    <section id="network" class="py-24 border-b border-trace">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6">
+            <div class="flex items-center gap-4 mb-16">
+                <span class="font-mono text-signal text-sm">03</span>
+                <div class="h-px flex-1 bg-trace"></div>
+                <h2 class="font-mono text-2xl sm:text-4xl font-bold text-frost uppercase tracking-tighter">Network Layers</h2>
+            </div>
+
+            <!-- Application Tabs -->
+            <div class="flex flex-wrap gap-0 border border-trace mb-8">
+                <button onclick="setLayer('finance')" id="layer-finance" class="tab-active px-6 py-3 font-mono text-xs uppercase tracking-wider">Finance</button>
+                <button onclick="setLayer('identity')" id="layer-identity" class="tab-inactive px-6 py-3 font-mono text-xs uppercase tracking-wider border-l border-trace">Identity</button>
+                <button onclick="setLayer('supply')" id="layer-supply" class="tab-inactive px-6 py-3 font-mono text-xs uppercase tracking-wider border-l border-trace">Supply Chain</button>
+                <button onclick="setLayer('ai')" id="layer-ai" class="tab-inactive px-6 py-3 font-mono text-xs uppercase tracking-wider border-l border-trace">AI x Chain</button>
+            </div>
+
+            <div class="grid lg:grid-cols-12 gap-0 border border-trace" id="layer-content">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Telemetry / Market Data -->
+    <section id="telemetry" class="py-24 border-b border-trace">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6">
+            <div class="flex items-center gap-4 mb-16">
+                <span class="font-mono text-signal text-sm">04</span>
+                <div class="h-px flex-1 bg-trace"></div>
+                <h2 class="font-mono text-2xl sm:text-4xl font-bold text-frost uppercase tracking-tighter">Telemetry</h2>
+            </div>
+
+            <div class="grid lg:grid-cols-4 gap-0 border border-trace mb-12">
+                <div class="p-6 border-r border-trace border-b lg:border-b-0">
+                    <div class="font-mono text-[10px] text-trace uppercase tracking-widest mb-2">Market Cap 2026</div>
+                    <div class="font-mono text-3xl text-frost font-bold">$33.0B</div>
+                    <div class="font-mono text-[10px] text-signal mt-1">↑ 43% CAGR</div>
+                </div>
+                <div class="p-6 border-r border-trace border-b lg:border-b-0">
+                    <div class="font-mono text-[10px] text-trace uppercase tracking-widest mb-2">RWA Tokenized</div>
+                    <div class="font-mono text-3xl text-frost font-bold">$18.5B</div>
+                    <div class="font-mono text-[10px] text-signal mt-1">↑ 3x YoY</div>
+                </div>
+                <div class="p-6 border-r border-trace border-b lg:border-b-0">
+                    <div class="font-mono text-[10px] text-trace uppercase tracking-widest mb-2">CBDC Countries</div>
+                    <div class="font-mono text-3xl text-frost font-bold">137</div>
+                    <div class="font-mono text-[10px] text-signal mt-1">49 in pilot/launch</div>
+                </div>
+                <div class="p-6">
+                    <div class="font-mono text-[10px] text-trace uppercase tracking-widest mb-2">DeFi TVL</div>
+                    <div class="font-mono text-3xl text-frost font-bold">$100B</div>
+                    <div class="font-mono text-[10px] text-signal mt-1">Projected 2026</div>
+                </div>
+            </div>
+
+            <!-- Growth Trajectory -->
+            <div class="border border-trace p-8">
+                <h3 class="font-mono text-sm text-signal uppercase tracking-widest mb-8">Growth Trajectory (2026-2030)</h3>
+                
+                <div class="relative h-64 w-full">
+                    <canvas id="growthChart" class="w-full h-full"></canvas>
+                </div>
+                
+                <div class="mt-6 flex justify-between font-mono text-[10px] text-trace uppercase">
+                    <span>2026: $33B</span>
+                    <span>2028: $100B</span>
+                    <span>2030: $393B</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 bg-void">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6">
+            <div class="grid md:grid-cols-4 gap-8 border border-trace p-8 mb-8">
+                <div>
+                    <div class="font-mono text-sm font-bold text-frost mb-4 uppercase tracking-widest">CHAIN/LOG</div>
+                    <p class="font-mono text-[10px] text-trace leading-relaxed">
+                        Distributed ledger architecture for the post-trust era. 
+                        No intermediaries. No soft UI. Raw consensus.
+                    </p>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] text-signal uppercase tracking-widest mb-4">Navigation</div>
+                    <ul class="space-y-2 font-mono text-xs text-trace">
+                        <li><a href="#protocol" class="hover:text-signal transition-none">Protocol</a></li>
+                        <li><a href="#ledger" class="hover:text-signal transition-none">Ledger</a></li>
+                        <li><a href="#network" class="hover:text-signal transition-none">Network</a></li>
+                        <li><a href="#telemetry" class="hover:text-signal transition-none">Telemetry</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] text-signal uppercase tracking-widest mb-4">Resources</div>
+                    <ul class="space-y-2 font-mono text-xs text-trace">
+                        <li><a href="#" class="hover:text-signal transition-none">Whitepaper</a></li>
+                        <li><a href="#" class="hover:text-signal transition-none">GitHub</a></li>
+                        <li><a href="#" class="hover:text-signal transition-none">Documentation</a></li>
+                        <li><a href="#" class="hover:text-signal transition-none">Status</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="font-mono text-[10px] text-signal uppercase tracking-widest mb-4">Node Status</div>
+                    <div class="font-mono text-xs text-trace space-y-1">
+                        <div class="flex justify-between"><span>Mainnet:</span> <span class="text-signal">SYNCED</span></div>
+                        <div class="flex justify-between"><span>Testnet:</span> <span class="text-signal">SYNCED</span></div>
+                        <div class="flex justify-between"><span>Peers:</span> <span class="text-frost">128</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center font-mono text-[10px] text-trace uppercase tracking-wider">
+                <span>© 2026 CHAIN/LOG SYSTEMS</span>
+                <span class="mt-2 md:mt-0">BLOCK HEIGHT: 18,402,991 // HASH: 0000000000000000000b3d8a7...</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu
+        function toggleMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        // Terminal feed simulation
+        const feedLines = [
+            "[14:02:01] New block mined: #18402991",
+            "[14:02:01] Hash: 0000000000000000000b3d8...",
+            "[14:02:00] TX: 0x7a3f... → 0x9b2e... | 4.2 ETH",
+            "[14:01:58] Node peer connected: 192.168.x.x",
+            "[14:01:55] Smart contract executed: 0xdef1...",
+            "[14:01:52] ZK-Proof verified: batch #8921",
+            "[14:01:48] Cross-chain bridge: Ethereum → Arbitrum",
+            "[14:01:45] Validator set rotation complete",
+            "[14:01:42] RWA settlement: $2.4M tokenized T-Bill",
+            "[14:01:38] CBDC transaction: e-CNY corridor active"
+        ];
+
+        function updateFeed() {
+            const container = document.getElementById('terminal-feed');
+            if (!container) return;
+            
+            const line = feedLines[Math.floor(Math.random() * feedLines.length)];
+            const div = document.createElement('div');
+            div.className = 'text-trace';
+            div.textContent = line;
+            container.appendChild(div);
+            
+            if (container.children.length > 8) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        setInterval(updateFeed, 2000);
+        updateFeed();
+
+        // Network visualization (Canvas)
+        const canvas = document.getElementById('nodeCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let nodes = [];
+            let animationId;
+
+            function resizeCanvas() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+
+            function initNodes() {
+                nodes = [];
+                const count = 25;
+                for (let i = 0; i < count; i++) {
+                    nodes.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        radius: Math.random() * 2 + 1
+                    });
+                }
+                document.getElementById('node-count').textContent = count;
+            }
+
+            function drawNetwork() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw connections
+                let connections = 0;
+                ctx.strokeStyle = 'rgba(0, 255, 65, 0.15)';
+                ctx.lineWidth = 0.5;
+                
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const dx = nodes[i].x - nodes[j].x;
+                        const dy = nodes[i].y - nodes[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(nodes[i].x, nodes[i].y);
+                            ctx.lineTo(nodes[j].x, nodes[j].y);
+                            ctx.stroke();
+                            connections++;
+                        }
+                    }
+                }
+                
+                document.getElementById('conn-count').textContent = connections;
+
+                // Draw nodes
+                nodes.forEach(node => {
+                    node.x += node.vx;
+                    node.y += node.vy;
+
+                    if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+                    if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#00ff41';
+                    ctx.fill();
+                });
+
+                animationId = requestAnimationFrame(drawNetwork);
+            }
+
+            resizeCanvas();
+            initNodes();
+            drawNetwork();
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                initNodes();
+            });
+        }
+
+        // Blockchain visualization
+        let blockHeight = 18402988;
+        let blockchain = [];
+        
+        function generateBlock(prevHash, index) {
+            const data = [
+                "Alice→Bob: 5.0 BTC",
+                "Contract Exec: 0xdef",
+                "RWA Settlement: $2.4M",
+                "CBDC Transfer: ¥500K",
+                "ZK-Batch: #8921"
+            ][Math.floor(Math.random() * 5)];
+            
+            const hash = '0000000000' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            
+            return {
+                index: index,
+                timestamp: new Date().toISOString(),
+                data: data,
+                prevHash: prevHash,
+                hash: hash.substring(0, 20) + '...',
+                fullHash: hash
+            };
+        }
+
+        // Initialize genesis
+        let prev = '00000000000000000000000000000000';
+        for (let i = 0; i < 4; i++) {
+            const block = generateBlock(prev, blockHeight + i);
+            blockchain.push(block);
+            prev = block.fullHash;
+        }
+
+        function renderBlockchain() {
+            const container = document.getElementById('blockchain-viz');
+            container.innerHTML = '';
+            
+            blockchain.forEach((block, i) => {
+                const div = document.createElement('div');
+                div.className = 'w-64 flex-shrink-0 border border-trace p-4 bg-void relative group';
+                div.id = `block-${i}`;
+                
+                const isTampered = block.tampered ? 'border-alert' : 'border-trace';
+                const hashColor = block.tampered ? 'text-alert' : 'text-signal';
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-3 border-b border-trace pb-2">
+                        <span class="font-mono text-xs text-frost font-bold">BLOCK #${block.index}</span>
+                        <span class="font-mono text-[10px] text-trace">${block.timestamp.split('T')[1].split('.')[0]}</span>
+                    </div>
+                    <div class="hash-block mb-3">
+                        <div class="text-trace mb-1">PREV:</div>
+                        <div class="text-dim">${block.prevHash}</div>
+                    </div>
+                    <div class="border border-trace p-2 mb-3 bg-dim">
+                        <div class="font-mono text-[10px] text-trace uppercase mb-1">Payload</div>
+                        <div class="font-mono text-xs text-frost">${block.data}</div>
+                    </div>
+                    <div class="hash-block">
+                        <div class="text-trace mb-1">HASH:</div>
+                        <div class="${hashColor} block-hash">${block.hash}</div>
+                    </div>
+                    <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 text-trace">
+                        ${i < blockchain.length - 1 ? '→' : ''}
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function mineBlock() {
+            const lastBlock = blockchain[blockchain.length - 1];
+            const newBlock = generateBlock(lastBlock.fullHash, lastBlock.index + 1);
+            blockchain.push(newBlock);
+            
+            if (blockchain.length > 6) {
+                blockchain.shift();
+            }
+            
+            renderBlockchain();
+            updateStatus('NEW BLOCK MINED // CHAIN EXTENDED // ALL HASHES VALID');
+        }
+
+        function tamperBlock() {
+            if (blockchain.length > 1) {
+                const targetIndex = Math.floor(Math.random() * (blockchain.length - 1));
+                blockchain[targetIndex].data = '**TAMPERED** ' + Math.random();
+                blockchain[targetIndex].tampered = true;
+                
+                // Break subsequent hashes
+                for (let i = targetIndex + 1; i < blockchain.length; i++) {
+                    blockchain[i].tampered = true;
+                }
+                
+                renderBlockchain();
+                updateStatus('ALERT: HASH MISMATCH DETECTED // BLOCK ' + blockchain[targetIndex].index + ' CORRUPTED // CONSENSUS BROKEN');
+                
+                // Visual alert
+                document.getElementById('ledger-status').classList.add('text-alert');
+                setTimeout(() => {
+                    document.getElementById('ledger-status').classList.remove('text-alert');
+                }, 3000);
+            }
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('ledger-status').textContent = 'STATUS: ' + msg;
+        }
+
+        renderBlockchain();
+
+        // Layer content
+        const layerData = {
+            finance: {
+                title: 'Institutional Finance',
+                content: 'Nearly 80% of financial institutions pilot blockchain solutions. Cross-border settlement compressed from T+3 to T+0. BlackRock BUIDL crossed $500M in tokenized Treasuries. The DeFi market projects $100B valuation in 2026.',
+                metrics: [
+                    { label: 'Settlement Speed', value: 'T+0' },
+                    { label: 'Cost Reduction', value: '96%' },
+                    { label: 'Stablecoin Vol', value: '$4T+' }
+                ],
+                features: ['Tokenized Securities', 'Institutional DeFi', 'CBDC Rails', 'Cross-border RTGS']
+            },
+            identity: {
+                title: 'Self-Sovereign Identity',
+                content: 'Decentralized identifiers (DIDs) give users cryptographic control over credentials. Zero-knowledge proofs verify KYC without exposing underlying data. EU EBSI program verifies academic credentials across member states.',
+                metrics: [
+                    { label: 'Verification', value: 'Instant' },
+                    { label: 'Fraud Reduction', value: '82%' },
+                    { label: 'DIDs Active', value: '50M+' }
+                ],
+                features: ['ZK-KYC', 'Verifiable Credentials', 'Biometric Anchoring', 'Cross-border eID']
+            },
+            supply: {
+                title: 'Supply Chain Provenance',
+                content: 'Walmart reduced traceability from 7 days to 2.2 seconds. Blockchain cuts administrative costs by 30% and enables real-time ESG reporting. Lot-level tracking now standard for pharma and luxury goods.',
+                metrics: [
+                    { label: 'Traceability', value: '2.2s' },
+                    { label: 'Cost Cut', value: '30%' },
+                    { label: 'Transit Time', value: '-40%' }
+                ],
+                features: ['Lot Tracking', 'Anti-counterfeit', 'Carbon Reporting', 'IoT Integration']
+            },
+            ai: {
+                title: 'AI x Blockchain Convergence',
+                content: 'Blockchain anchors trust in AI systems—tracking data provenance, decentralizing compute, and verifying agent behavior. Bittensor coordinates AI models via token incentives. Market projected at $1.88B by 2029.',
+                metrics: [
+                    { label: 'Market 2029', value: '$1.88B' },
+                    { label: 'Data Provenance', value: '100%' },
+                    { label: 'Model Audit', value: 'On-chain' }
+                ],
+                features: ['Decentralized Compute', 'Model Provenance', 'Agent Coordination', 'Data Monetization']
+            }
+        };
+
+        function setLayer(layer) {
+            // Update tabs
+            document.querySelectorAll('[id^="layer-"]').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+            document.getElementById(`layer-${layer}`).classList.remove('tab-inactive');
+            document.getElementById(`layer-${layer}`).classList.add('tab-active');
+
+            const data = layerData[layer];
+            const container = document.getElementById('layer-content');
+            
+            container.innerHTML = `
+                <div class="lg:col-span-7 p-8 border-r border-trace">
+                    <div class="font-mono text-signal text-xs uppercase tracking-widest mb-6 border-b border-trace pb-4">
+                        ${data.title}
+                    </div>
+                    <p class="text-sm text-trace leading-relaxed mb-8 font-mono">
+                        ${data.content}
+                    </p>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${data.features.map(f => `
+                            <div class="border border-trace p-3 flex items-center gap-3">
+                                <span class="w-2 h-2 bg-signal"></span>
+                                <span class="font-mono text-xs text-frost">${f}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="lg:col-span-5 p-8 bg-dim">
+                    <div class="font-mono text-[10px] text-trace uppercase tracking-widest mb-6">Performance Metrics</div>
+                    <div class="space-y-6">
+                        ${data.metrics.map(m => `
+                            <div>
+                                <div class="flex justify-between font-mono text-xs text-frost mb-2">
+                                    <span>${m.label}</span>
+                                    <span class="text-signal">${m.value}</span>
+                                </div>
+                                <div class="h-2 border border-trace bg-void relative">
+                                    <div class="absolute top-0 left-0 h-full progress-fill" style="width: ${Math.random() * 40 + 60}%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        setLayer('finance');
+
+        // Growth chart (Canvas)
+        const chartCanvas = document.getElementById('growthChart');
+        if (chartCanvas) {
+            const ctx = chartCanvas.getContext('2d');
+            
+            function drawChart() {
+                const rect = chartCanvas.parentElement.getBoundingClientRect();
+                chartCanvas.width = rect.width;
+                chartCanvas.height = rect.height;
+                
+                const w = chartCanvas.width;
+                const h = chartCanvas.height;
+                const padding = 40;
+                
+                ctx.clearRect(0, 0, w, h);
+                
+                // Grid
+                ctx.strokeStyle = 'rgba(51, 51, 51, 0.5)';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i <= 4; i++) {
+                    const y = padding + (h - 2 * padding) * (i / 4);
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(w - padding, y);
+                    ctx.stroke();
+                }
+                
+                // Data points: 2026=33, 2027=60, 2028=100, 2029=200, 2030=393
+                const data = [33, 60, 100, 200, 393];
+                const maxVal = 400;
+                const xStep = (w - 2 * padding) / (data.length - 1);
+                
+                // Draw line
+                ctx.strokeStyle = '#00ff41';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                data.forEach((val, i) => {
+                    const x = padding + i * xStep;
+                    const y = h - padding - (val / maxVal) * (h - 2 * padding);
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                
+                ctx.stroke();
+                
+                // Draw points
+                data.forEach((val, i) => {
+                    const x = padding + i * xStep;
+                    const y = h - padding - (val / maxVal) * (h - 2 * padding);
+                    
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(x - 3, y - 3, 6, 6);
+                    ctx.strokeStyle = '#00ff41';
+                    ctx.strokeRect(x - 3, y - 3, 6, 6);
+                    
+                    // Labels
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.font = '10px "Space Mono"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText((2026 + i).toString(), x, h - 10);
+                    ctx.fillText('$' + val + 'B', x, y - 10);
+                });
+            }
+            
+            drawChart();
+            window.addEventListener('resize', drawChart);
+        }
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
